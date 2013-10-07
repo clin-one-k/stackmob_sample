@@ -1,4 +1,5 @@
 <?php
+//login 
 function user_login($username, $password){
 	$body="username=".$username."&password=".$password."&token_type=mac";
 	$curl = curl_init ( "http://api.stackmob.com/user/accessToken" );
@@ -9,32 +10,26 @@ function user_login($username, $password){
 	    "Content-Type:application/x-www-form-urlencoded",
 	    "Accept: application/vnd.stackmob+json; version=0",
 	    "X-stackMob-API-Key: ".KEY
-
 	    )
 	);
 
 	// run crul
 	$response = curl_exec ( $curl );
-	//list( $header, $body ) = explode ( "\r\n\r\n", $response, 2 );
-	//$decoded = json_decode ( $body );
 	$status = curl_getinfo ($curl);
-	//$b = curl_multi_getcontent($curl);
-	//var_dump($decoded->stackmob->user);
-    $decoded = get_http_body ($response);
 	if($status['http_code']=="401"){
-	    
+		//login failed
 	    return FALSE;
 	}else{
 		session_start();
+		$decoded = get_http_body ($response);
 		$_SESSION['user']=$decoded->stackmob->user->username;
 		$_SESSION['photo']=$decoded->stackmob->user->photo;
 		$_SESSION['areacode']=$decoded->stackmob->user->areacode;
-		//var_dump($_SESSION);
-		return TRUE;
-		
-	    
+		return TRUE;  
 	}
 }
+
+//update area code
 function update_areacode($code){
 
 	$body=array("areacode"=>$code);
@@ -50,27 +45,20 @@ function update_areacode($code){
         "Content-Type: application/json"
     ));
     $response = curl_exec ( $curl );
-    //var_dump($response);
-    //list( $header, $body ) = explode ( "\r\n\r\n", $response, 2 );
-	//$decoded = json_decode ( $body );
     $decoded = get_http_body ($response);
 	$status = curl_getinfo ($curl);
-	//$b = curl_multi_getcontent($curl);
-	//var_dump($decoded);
 	if($status['http_code']=="401"){
-	    
+	    //failed
 	    return FALSE;
 	}else{
 		$_SESSION['user']=$decoded->username;
 		$_SESSION['photo']=$decoded->photo;
 		$_SESSION['areacode']=$decoded->areacode;
-		//var_dump($_SESSION);
-		return TRUE;
-		
-	    
+		return TRUE;	    
 	}
 }
 
+//update or add photo (file)
 function process_photo(){
 	if($_FILES["photo"]["error"]>0){
 	    $mesg= "Error: ". $_FILES["photo"]["error"] . "<br>";
@@ -95,11 +83,6 @@ function process_photo(){
         "Content-Type: application/json"
     ));
     $response = curl_exec ( $curl );
-    //var_dump($response);
-    //$resMesg= new HttpMessage($response);
-    //list( $header, $h2,$rbody ) = explode ( "\r\n\r\n", $response, 3 );
-    //$decoded = json_decode ( $resMesg->getBody() );
-    //$decoded = json_decode ( $rbody );
     $decoded = get_http_body ($response);
 	$status = curl_getinfo ($curl);
 	if($status['http_code']=="401"){
@@ -108,10 +91,13 @@ function process_photo(){
 		$_SESSION['user']=$decoded->username;
 		$_SESSION['photo']=$decoded->photo;
 		$_SESSION['areacode']=$decoded->areacode;
-		//var_dump($_SESSION);
 		return TRUE;
 	}
 }
+
+// get http response body
+// Use HttpResponse Object is easier, 
+// but PECL lib is not install on this server
 function get_http_body ($response){
     if(($pos=strpos($response,"{"))!==false) { 
         $body=substr($response,$pos);
